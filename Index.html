@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️Cube Clash⚔️</title>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #00e676; --text: #fff; --danger: #ff5252; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box;}
+        h1 { text-align: center; font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 0 10px var(--accent); }
+        .main-container { width: 100%; max-width: 800px; flex-grow: 1; }
+        
+        /* Bolitas de Tablas */
+        .tables-nav { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 5px; }
+        .table-pill { background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; cursor: pointer; white-space: nowrap; font-weight: bold; border: 2px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 8px;}
+        .table-pill.active { background: var(--card); border-color: var(--accent); color: var(--accent); }
+        
+        .table-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); position: relative; }
+        .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        .table-title { font-size: 1.5rem; margin: 0; word-break: break-word; display: flex; align-items: center; gap: 10px; }
+        
+        .live-dot { height: 12px; width: 12px; background-color: var(--accent); border-radius: 50%; display: inline-block; animation: blink 1s infinite; flex-shrink: 0; box-shadow: 0 0 8px var(--accent);}
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* Apartados (Pestañas) */
+        .section-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; align-items: center; }
+        .tab-wrapper { display: flex; align-items: center; background: #333; border-radius: 20px; overflow: hidden; border: 1px solid #444;}
+        .tab-btn { background: transparent; color: #fff; padding: 8px 15px; border: none; cursor: pointer; white-space: nowrap; font-size: 14px; width: auto; margin: 0; border-radius: 0; }
+        .tab-wrapper.active { background: var(--accent); border-color: var(--accent);}
+        .tab-wrapper.active .tab-btn { color: #000; font-weight: bold; }
+        
+        .delete-tab-btn { background: rgba(0,0,0,0.2); color: #fff; padding: 8px 12px; border: none; cursor: pointer; font-weight: bold; width: auto; margin: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;}
+        .delete-tab-btn:hover { background: var(--danger); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 5px; text-align: left; border-bottom: 1px solid #333; font-size: 15px; }
+        th { color: #888; font-size: 0.8rem; text-transform: uppercase; }
+        .rank { font-weight: bold; color: var(--accent); width: 30px; }
+        .time { font-family: monospace; font-size: 1.1rem; text-align: right; }
+        
+        .delete-row-btn { background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 4px; padding: 6px 12px; cursor: pointer; font-size: 0.9rem; width: auto; margin: 0; font-weight: bold;}
+        .delete-row-btn:hover { background: var(--danger); color: white; }
+        
+        .btn { padding: 12px 20px; cursor: pointer; background: var(--accent); border: none; border-radius: 5px; font-weight: bold; color: #000; font-size: 16px; width: 100%; margin-top: 5px; transition: 0.2s;}
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        .btn-outline:hover { background: var(--accent); color: #000;}
+        
+        .admin-form { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #444; }
+        .admin-form h3 { margin-top: 0; font-size: 1rem; color: #aaa; }
+        .admin-form input { padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #333; background: #1a1a1a; color: white; width: 100%; box-sizing: border-box; font-size: 16px; margin-bottom: 10px;}
+        
+        .admin-actions { margin-top:10px; display: flex; gap: 10px; flex-wrap: wrap;}
+        
+        /* Login abajo */
+        .login-container { width: 100%; max-width: 400px; margin-top: 40px; padding: 20px; background: var(--card); border-radius: 10px; box-sizing: border-box; border: 1px solid #333; }
+        .login-container p { text-align: center; color: #aaa; margin-top: 0; }
+        .login-container input { padding: 12px; margin: 5px 0; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white; width: 100%; box-sizing: border-box; font-size: 16px; margin-bottom: 10px;}
+        
+        /* Versión */
+        .version-tag { position: fixed; bottom: 10px; left: 10px; font-size: 12px; color: #555; font-family: monospace; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>⚔️Cube Clash⚔️</h1>
+
+    <div class="main-container">
+        <!-- Panel Admin Global -->
+        <div id="admin-panel-global" style="display:none; margin-bottom: 20px;">
+            <button id="btn-show-create-table" class="btn btn-outline">+ Crear Nueva Tabla</button>
+            <div id="create-table-form" class="admin-form" style="display:none;">
+                <h3>Nombre de la nueva tabla</h3>
+                <input type="text" id="new-table-name" placeholder="Ej: Torneo Cube Clash">
+                <button onclick="saveNewTable()" class="btn">Guardar Tabla</button>
+                <button onclick="document.getElementById('create-table-form').style.display='none'" class="btn" style="background:#555; color:white;">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Bolitas Tablas -->
+        <div id="tables-nav" class="tables-nav"></div>
+        
+        <!-- Contenido Tabla -->
+        <div id="active-table-container"></div>
+    </div>
+
+    <!-- Login Abajo -->
+    <div id="login-section" class="login-container">
+        <p>Inicia sesión como Admin</p>
+        <input type="email" id="email" placeholder="Correo" value="juan.jns.23.26@gmail.com" readonly>
+        <input type="password" id="password" placeholder="Contraseña">
+        <button onclick="login()" class="btn">Entrar</button>
+        <button id="btn-logout" onclick="logout()" class="btn btn-danger" style="display:none; margin-top:10px;">Cerrar Sesión</button>
+        <p id="login-error" style="color:var(--danger); font-size: 14px; margin-bottom: 0;"></p>
+    </div>
+
+    <div class="version-tag">v1.3</div>
+
+    <!-- CARGAMOS FIREBASE CLÁSICO -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // CONFIGURACIÓN
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGBrflW7xXn2ziicBTBZ6lOQHRUjEGHcs",
+            authDomain: "cube-clash-a928c.firebaseapp.com",
+            databaseURL: "https://cube-clash-a928c-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "cube-clash-a928c",
+            storageBucket: "cube-clash-a928c.firebasestorage.app",
+            messagingSenderId: "1091184464771",
+            appId: "1:1091184464771:web:2eb0cb14c490f53b545cb6"
+        };
+
+        // INICIALIZAR
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        const ADMIN_EMAIL = "juan.jns.23.26@gmail.com";
+
+        // VARIABLES GLOBALES
+        let isAdmin = false;
+        let currentData = null;
+        let activeTableId = null;
+        let activeSectionId = null;
+        let showAllEntries = false;
+
+        // ELEMENTOS DEL DOM
+        const tablesNav = document.getElementById('tables-nav');
+        const activeTableContainer = document.getElementById('active-table-container');
+        const adminPanelGlobal = document.getElementById('admin-panel-global');
+        const loginSection = document.getElementById('login-section');
+        const btnLogout = document.getElementById('btn-logout');
+
+        // --- AUTENTICACIÓN ---
+        function login() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, pass)
+                .catch(err => {
+                    document.getElementById('login-error').innerText = "Error: " + err.message;
+                });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email === ADMIN_EMAIL) {
+                isAdmin = true;
+                loginSection.style.display = 'none'; // Ocultamos todo el login
+                adminPanelGlobal.style.display = 'block';
+                btnLogout.style.display = 'none'; // Ya no hace falta aquí
+            } else {
+                isAdmin = false;
+                loginSection.style.display = 'block';
+                adminPanelGlobal.style.display = 'none';
+                btnLogout.style.display = 'none';
+            }
+            drawUI(); 
+        });
+
+        // Mostrar botón cerrar sesión si estamos logueados
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email === ADMIN_EMAIL) {
+                // Añadimos el botón de cerrar sesión al panel de admin
+                if(!document.getElementById('btn-logout-top')) {
+                    const btnTop = document.createElement('button');
+                    btnTop.id = 'btn-logout-top';
+                    btnTop.innerText = "Cerrar Sesión";
+                    btnTop.className = "btn btn-danger";
+                    btnTop.style.marginTop = "10px";
+                    btnTop.onclick = logout;
+                    adminPanelGlobal.appendChild(btnTop);
+                }
+            } else {
+                const btnTop = document.getElementById('btn-logout-top');
+                if(btnTop) btnTop.remove();
+            }
+        });
+
+        // --- CREAR TABLA ---
+        document.getElementById('btn-show-create-table').onclick = function() {
+            document.getElementById('create-table-form').style.display = 'block';
+        };
+
+        function saveNewTable() {
+            const name = document.getElementById('new-table-name').value.trim();
+            if (!name) return alert("Escribe un nombre");
+            const newRef = db.ref('tables').push();
+            newRef.set({ name: name, sections: [], createdAt: Date.now() })
+                .then(() => {
+                    document.getElementById('new-table-name').value = '';
+                    document.getElementById('create-table-form').style.display = 'none';
+                    activeTableId = newRef.key;
+                })
+                .catch(e => alert("Error: " + e.message));
+        }
+
+        // --- BORRAR ---
+        function deleteTable(id) {
+            if(confirm("¿Seguro que quieres eliminar TODA la tabla?")) {
+                db.ref('tables/' + id).remove();
+            }
+        }
+
+        function deleteSection(tableId, sectionName) {
+            if(confirm("¿Seguro que quieres eliminar el apartado '" + sectionName + "'?")) {
+                db.ref('tables/' + tableId).once('value').then(snap => {
+                    const data = snap.val();
+                    let sections = (data.sections || []).filter(s => s !== sectionName);
+                    let entries = data.entries || {};
+                    for (let k in entries) {
+                        if (entries[k].section === sectionName) delete entries[k];
+                    }
+                    db.ref('tables/' + tableId).update({ sections: sections, entries: entries });
+                });
+            }
+        }
+
+        function deleteEntry(tableId, entryId) {
+            if(confirm("¿Seguro que quieres eliminar este tiempo?")) {
+                db.ref('tables/' + tableId + '/entries/' + entryId).remove();
+            }
+        }
+
+        // --- NAVEGACIÓN ---
+        function switchTable(id) {
+            activeTableId = id;
+            activeSectionId = null;
+            showAllEntries = false;
+            drawUI();
+        }
+
+        function switchSection(sec) {
+            activeSectionId = sec;
+            showAllEntries = false;
+            drawUI();
+        }
+
+        function toggleShowAll() {
+            showAllEntries = !showAllEntries;
+            drawUI();
+        }
+
+        // --- GUARDAR ---
+        function saveSection() {
+            const input = document.getElementById('new-section-name');
+            const secName = input.value.trim();
+            if (!secName) return alert("Escribe un nombre");
+            
+            db.ref('tables/' + activeTableId).once('value').then(snap => {
+                const data = snap.val();
+                const sections = data.sections || [];
+                sections.push(secName);
+                db.ref('tables/' + activeTableId).update({ sections: sections }).then(() => {
+                    activeSectionId = secName;
+                    input.value = '';
+                    document.getElementById('section-form').style.display = 'none';
+                    drawUI();
+                });
+            });
+        }
+
+        function saveTime() {
+            const nameIn = document.getElementById('new-player-name');
+            const timeIn = document.getElementById('new-player-time');
+            if (!nameIn.value || !timeIn.value) return alert("Rellena todo");
+            const parseTime = (str) => {
+                let m = 0, s = 0;
+                if (str.includes(':')) { const p = str.split(':'); m = parseFloat(p[0]); s = parseFloat(p[1]); } 
+                else { s = parseFloat(str); }
+                return m * 60 + s;
+            };
+            const secs = parseTime(timeIn.value);
+            if (isNaN(secs)) return alert("Formato inválido (usa 12.34 o 1:23.45)");
+            
+            const newRef = db.ref('tables/' + activeTableId + '/entries').push();
+            newRef.set({ name: nameIn.value, time: timeIn.value, timeInSeconds: secs, section: activeSectionId })
+                .then(() => {
+                    nameIn.value = ''; timeIn.value = '';
+                    document.getElementById('time-form').style.display = 'none';
+                });
+        }
+
+        // --- ESCUCHA DE DATOS ---
+        db.ref('tables').on('value', (snapshot) => {
+            currentData = snapshot.val();
+            if (!activeTableId && currentData) {
+                const tables = Object.entries(currentData).map(([id, val]) => ({ id, ...val }));
+                tables.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if (tables.length > 0) activeTableId = tables[0].id;
+            }
+            drawUI();
+        });
+
+        // --- RENDERIZADO ---
+        function drawUI() {
+            if (!currentData) {
+                tablesNav.innerHTML = '';
+                activeTableContainer.innerHTML = '<p style="text-align:center; color:#888;">No hay tablas creadas aún.</p>';
+                return;
+            }
+
+            const tables = Object.entries(currentData).map(([id, val]) => ({ id, ...val }));
+            tables.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            const latestTableId = tables.length > 0 ? tables[0].id : null;
+
+            tablesNav.innerHTML = tables.map(t => `
+                <div class="table-pill ${t.id === activeTableId ? 'active' : ''}" onclick="switchTable('${t.id}')">
+                    ${t.name}
+                    ${t.id === latestTableId ? '<span class="live-dot"></span>' : ''}
+                </div>
+            `).join('');
+
+            const table = currentData[activeTableId];
+            if (!table) { activeTableContainer.innerHTML = ''; return; }
+
+            const sections = table.sections || [];
+            if (!activeSectionId && sections.length > 0) activeSectionId = sections[0];
+
+            const entries = table.entries || {};
+            const entriesArray = Object.entries(entries).map(([id, val]) => ({ id, ...val }));
+
+            const tabsHtml = sections.map(sec => {
+                const safeSec = sec.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return `
+                <div class="tab-wrapper ${sec === activeSectionId ? 'active' : ''}">
+                    <button class="tab-btn" onclick="switchSection('${safeSec}')">${sec}</button>
+                    ${isAdmin ? `<button class="delete-tab-btn" onclick="deleteSection('${activeTableId}', '${safeSec}')">×</button>` : ''}
+                </div>
+            `}).join('');
+
+            let filtered = activeSectionId ? entriesArray
+                .filter(e => e.section === activeSectionId)
+                .sort((a, b) => a.timeInSeconds - b.timeInSeconds) : [];
+
+            const totalEntries = filtered.length;
+            if (!showAllEntries) filtered = filtered.slice(0, 15);
+
+            const rowsHtml = filtered.map((entry, index) => `
+                <tr>
+                    <td class="rank">${index + 1}</td>
+                    <td>${entry.name}</td>
+                    <td class="time">${entry.time}</td>
+                    ${isAdmin ? `<td style="width: 70px; text-align: right;"><button class="delete-row-btn" onclick="deleteEntry('${activeTableId}', '${entry.id}')">X</button></td>` : ''}
+                </tr>
+            `).join('');
+
+            const emptyMsg = totalEntries === 0 ? '<tr><td colspan="4" style="text-align:center; color:#888;">Sin tiempos.</td></tr>' : '';
+
+            const showAllBtn = totalEntries > 15 ? `
+                <button class="btn btn-outline" onclick="toggleShowAll()" style="margin-top: 15px;">
+                    ${showAllEntries ? 'Mostrar solo los 15 primeros' : `Mostrar todos (${totalEntries})`}
+                </button>
+            ` : '';
+
+            let formsHtml = '';
+            if (isAdmin) {
+                formsHtml = `
+                    <div class="admin-actions">
+                        <button onclick="document.getElementById('section-form').style.display='block'" class="btn" style="background:#444; color: white; flex: 1;">+ Apartado</button>
+                        ${activeSectionId ? `<button onclick="document.getElementById('time-form').style.display='block'" class="btn" style="flex: 1;">+ Tiempo</button>` : ''}
+                    </div>
+                    
+                    <div id="section-form" class="admin-form" style="display:none;">
+                        <h3>Nuevo apartado</h3>
+                        <input type="text" id="new-section-name" placeholder="Ej: 3x3">
+                        <button onclick="saveSection()" class="btn">Guardar</button>
+                        <button onclick="document.getElementById('section-form').style.display='none'" class="btn" style="background:#555; color:white;">Cancelar</button>
+                    </div>
+
+                    ${activeSectionId ? `
+                    <div id="time-form" class="admin-form" style="display:none;">
+                        <h3>Añadir tiempo a "${activeSectionId}"</h3>
+                        <input type="text" id="new-player-name" placeholder="Nombre">
+                        <input type="text" id="new-player-time" placeholder="Tiempo (ej: 1:08.43 o 12.68)">
+                        <button onclick="saveTime()" class="btn">Guardar</button>
+                        <button onclick="document.getElementById('time-form').style.display='none'" class="btn" style="background:#555; color:white;">Cancelar</button>
+                    </div>
+                    ` : ''}
+                `;
+            }
+
+            const deleteTableBtn = isAdmin ? `<button onclick="deleteTable('${activeTableId}')" class="btn btn-danger" style="width:auto; padding: 5px 10px; margin:0;">Eliminar Tabla</button>` : '';
+
+            activeTableContainer.innerHTML = `
+                <div class="table-card">
+                    <div class="table-header">
+                        <h2 class="table-title">
+                            ${table.name}
+                            ${activeTableId === latestTableId ? '<span class="live-dot"></span>' : ''}
+                        </h2>
+                        ${deleteTableBtn}
+                    </div>
+                    
+                    <div class="section-tabs">
+                        ${sections.length === 0 ? '<span style="color:#888; font-size: 14px;">Crea un apartado para empezar</span>' : tabsHtml}
+                    </div>
+
+                    ${activeSectionId ? `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th style="text-align:right;">Tiempo</th>
+                                ${isAdmin ? '<th></th>' : ''}
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}${emptyMsg}</tbody>
+                    </table>
+                    ${showAllBtn}
+                    ` : ''}
+
+                    ${formsHtml}
+                </div>
+            `;
+        }
+
+        // Asegurarnos de que las funciones estén disponibles globalmente
+        window.login = login;
+        window.logout = logout;
+        window.saveNewTable = saveNewTable;
+        window.deleteTable = deleteTable;
+        window.deleteSection = deleteSection;
+        window.deleteEntry = deleteEntry;
+        window.switchTable = switchTable;
+        window.switchSection = switchSection;
+        window.toggleShowAll = toggleShowAll;
+        window.saveSection = saveSection;
+        window.saveTime = saveTime;
+    </script>
+</body>
+</html>
